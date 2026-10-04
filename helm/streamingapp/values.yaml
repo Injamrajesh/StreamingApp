@@ -1,6 +1,6 @@
 global:
   awsRegion: us-east-1
-  imageTag: c238a6f
+  imageTag: e743d87
 
 images:
   frontend:
@@ -144,7 +144,7 @@ mongodb:
 
   storage:
     size: 10Gi
-    storageClass: gp3
+    storageClass: gp2
 
   resources:
     requests:
@@ -157,7 +157,7 @@ mongodb:
 app:
   jwtSecret: "StreamingAppKubernetesSecretChangeMe"
 
-  clientUrls: "http://localhost"
+  clientUrls: "http://ad16be37adc77495c9bf89905876b3c8-465898737.us-east-1.elb.amazonaws.com"
 
   aws:
     region: us-east-1
@@ -166,12 +166,12 @@ app:
   streamingPublicUrl: ""
 
 frontendConfig:
-  authApiUrl: "/api/auth"
-  streamingApiUrl: "/api/streaming"
+  authApiUrl: "/api"
+  streamingApiUrl: "/api"
   streamingPublicUrl: ""
   adminApiUrl: "/api/admin"
   chatApiUrl: "/api/chat"
-  chatSocketUrl: ""
+  chatSocketUrl: "/"
 
 serviceAccount:
   create: true

@@ -33,7 +33,10 @@ spec:
             - name: MONGO_URI
               value: "mongodb://{{ include "streamingapp.fullname" $root }}-mongodb:27017/{{ .Values.mongodb.database }}"
             - name: JWT_SECRET
-              value: {{ .Values.app.jwtSecret | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamingapp.fullname" $root }}-secret
+                  key: JWT_SECRET
             - name: CLIENT_URLS
               value: {{ .Values.app.clientUrls | quote }}
             - name: AWS_REGION
@@ -110,7 +113,10 @@ spec:
             - name: MONGO_URI
               value: "mongodb://{{ include "streamingapp.fullname" $root }}-mongodb:27017/{{ .Values.mongodb.database }}"
             - name: JWT_SECRET
-              value: {{ .Values.app.jwtSecret | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamingapp.fullname" $root }}-secret
+                  key: JWT_SECRET
             - name: CLIENT_URLS
               value: {{ .Values.app.clientUrls | quote }}
             - name: AWS_REGION
@@ -191,7 +197,10 @@ spec:
             - name: MONGO_URI
               value: "mongodb://{{ include "streamingapp.fullname" $root }}-mongodb:27017/{{ .Values.mongodb.database }}"
             - name: JWT_SECRET
-              value: {{ .Values.app.jwtSecret | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamingapp.fullname" $root }}-secret
+                  key: JWT_SECRET
             - name: CLIENT_URLS
               value: {{ .Values.app.clientUrls | quote }}
             - name: AWS_REGION
@@ -270,7 +279,10 @@ spec:
             - name: MONGO_URI
               value: "mongodb://{{ include "streamingapp.fullname" $root }}-mongodb:27017/{{ .Values.mongodb.database }}"
             - name: JWT_SECRET
-              value: {{ .Values.app.jwtSecret | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "streamingapp.fullname" $root }}-secret
+                  key: JWT_SECRET
             - name: CLIENT_URLS
               value: {{ .Values.app.clientUrls | quote }}
           resources:
