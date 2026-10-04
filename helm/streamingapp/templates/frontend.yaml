@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-frontend
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "streamingapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.images.frontend.repository }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.images.frontend.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ include "streamingapp.fullname" . }}-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-frontend
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  type: {{ .Values.frontend.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.frontend.service.port }}
+      targetPort: {{ .Values.frontend.service.targetPort }}
+      protocol: TCP
+  selector:
+    {{- include "streamingapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend

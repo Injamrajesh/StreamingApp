@@ -1,0 +1,311 @@
+{{- $root := . }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-auth
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth
+spec:
+  replicas: {{ .Values.auth.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: auth
+  template:
+    metadata:
+      labels:
+        {{- include "streamingapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: auth
+    spec:
+      containers:
+        - name: auth
+          image: "{{ .Values.images.auth.repository }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.images.auth.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "3001"
+            - name: MONGO_URI
+              value: "mongodb://{{ include "streamingapp.fullname" $root }}-mongodb:27017/{{ .Values.mongodb.database }}"
+            - name: JWT_SECRET
+              value: {{ .Values.app.jwtSecret | quote }}
+            - name: CLIENT_URLS
+              value: {{ .Values.app.clientUrls | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.app.aws.region | quote }}
+            - name: AWS_S3_BUCKET
+              value: {{ .Values.app.aws.s3Bucket | quote }}
+          resources:
+            {{- toYaml .Values.auth.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health/
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-auth
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: auth
+spec:
+  type: {{ .Values.auth.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.auth.service.port }}
+      targetPort: {{ .Values.auth.service.targetPort }}
+      protocol: TCP
+  selector:
+    {{- include "streamingapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: auth
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-streaming
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: streaming
+spec:
+  replicas: {{ .Values.streaming.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: streaming
+  template:
+    metadata:
+      labels:
+        {{- include "streamingapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: streaming
+    spec:
+      containers:
+        - name: streaming
+          image: "{{ .Values.images.streaming.repository }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.images.streaming.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3002
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "3002"
+            - name: MONGO_URI
+              value: "mongodb://{{ include "streamingapp.fullname" $root }}-mongodb:27017/{{ .Values.mongodb.database }}"
+            - name: JWT_SECRET
+              value: {{ .Values.app.jwtSecret | quote }}
+            - name: CLIENT_URLS
+              value: {{ .Values.app.clientUrls | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.app.aws.region | quote }}
+            - name: AWS_S3_BUCKET
+              value: {{ .Values.app.aws.s3Bucket | quote }}
+            - name: AWS_CDN_URL
+              value: ""
+            - name: STREAMING_PUBLIC_URL
+              value: {{ .Values.app.streamingPublicUrl | quote }}
+          resources:
+            {{- toYaml .Values.streaming.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/health/
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health/
+              port: 3002
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-streaming
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: streaming
+spec:
+  type: {{ .Values.streaming.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.streaming.service.port }}
+      targetPort: {{ .Values.streaming.service.targetPort }}
+      protocol: TCP
+  selector:
+    {{- include "streamingapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: streaming
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-admin
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: admin
+spec:
+  replicas: {{ .Values.admin.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: admin
+  template:
+    metadata:
+      labels:
+        {{- include "streamingapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: admin
+    spec:
+      containers:
+        - name: admin
+          image: "{{ .Values.images.admin.repository }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.images.admin.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3003
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "3003"
+            - name: MONGO_URI
+              value: "mongodb://{{ include "streamingapp.fullname" $root }}-mongodb:27017/{{ .Values.mongodb.database }}"
+            - name: JWT_SECRET
+              value: {{ .Values.app.jwtSecret | quote }}
+            - name: CLIENT_URLS
+              value: {{ .Values.app.clientUrls | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.app.aws.region | quote }}
+            - name: AWS_S3_BUCKET
+              value: {{ .Values.app.aws.s3Bucket | quote }}
+            - name: AWS_CDN_URL
+              value: ""
+          resources:
+            {{- toYaml .Values.admin.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3003
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-admin
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: admin
+spec:
+  type: {{ .Values.admin.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.admin.service.port }}
+      targetPort: {{ .Values.admin.service.targetPort }}
+      protocol: TCP
+  selector:
+    {{- include "streamingapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: admin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-chat
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chat
+spec:
+  replicas: {{ .Values.chat.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "streamingapp.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: chat
+  template:
+    metadata:
+      labels:
+        {{- include "streamingapp.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: chat
+    spec:
+      containers:
+        - name: chat
+          image: "{{ .Values.images.chat.repository }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.images.chat.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3004
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "3004"
+            - name: MONGO_URI
+              value: "mongodb://{{ include "streamingapp.fullname" $root }}-mongodb:27017/{{ .Values.mongodb.database }}"
+            - name: JWT_SECRET
+              value: {{ .Values.app.jwtSecret | quote }}
+            - name: CLIENT_URLS
+              value: {{ .Values.app.clientUrls | quote }}
+          resources:
+            {{- toYaml .Values.chat.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3004
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3004
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "streamingapp.fullname" . }}-chat
+  labels:
+    {{- include "streamingapp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chat
+spec:
+  type: {{ .Values.chat.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.chat.service.port }}
+      targetPort: {{ .Values.chat.service.targetPort }}
+      protocol: TCP
+  selector:
+    {{- include "streamingapp.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: chat

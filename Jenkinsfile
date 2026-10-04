@@ -33,7 +33,16 @@ pipeline {
 
         stage('Build Docker Images') {
             steps {
-                sh 'docker build -t streamingapp-frontend:${IMAGE_TAG} ./frontend'
+                sh '''
+    docker build \
+      --build-arg REACT_APP_AUTH_API_URL=/api \
+      --build-arg REACT_APP_STREAMING_API_URL=/api \
+      --build-arg REACT_APP_STREAMING_PUBLIC_URL= \
+      --build-arg REACT_APP_ADMIN_API_URL=/api/admin \
+      --build-arg REACT_APP_CHAT_API_URL=/api/chat \
+      --build-arg REACT_APP_CHAT_SOCKET_URL=/ \
+      -t streamingapp-frontend:${IMAGE_TAG} ./frontend
+'''
                 sh 'docker build -t streamingapp-auth:${IMAGE_TAG} ./backend/authService'
                 sh 'docker build -t streamingapp-streaming:${IMAGE_TAG} -f ./backend/streamingService/Dockerfile ./backend'
                 sh 'docker build -t streamingapp-admin:${IMAGE_TAG} -f ./backend/adminService/Dockerfile ./backend'

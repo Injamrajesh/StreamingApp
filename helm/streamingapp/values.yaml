@@ -1,0 +1,187 @@
+global:
+  awsRegion: us-east-1
+  imageTag: c238a6f
+
+images:
+  frontend:
+    repository: 310297108115.dkr.ecr.us-east-1.amazonaws.com/streamingapp-frontend
+    pullPolicy: IfNotPresent
+
+  auth:
+    repository: 310297108115.dkr.ecr.us-east-1.amazonaws.com/streamingapp-auth-service
+    pullPolicy: IfNotPresent
+
+  streaming:
+    repository: 310297108115.dkr.ecr.us-east-1.amazonaws.com/streamingapp-streaming-service
+    pullPolicy: IfNotPresent
+
+  admin:
+    repository: 310297108115.dkr.ecr.us-east-1.amazonaws.com/streamingapp-admin-service
+    pullPolicy: IfNotPresent
+
+  chat:
+    repository: 310297108115.dkr.ecr.us-east-1.amazonaws.com/streamingapp-chat-service
+    pullPolicy: IfNotPresent
+
+frontend:
+  replicaCount: 2
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 80
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+auth:
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 3001
+    targetPort: 3001
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+streaming:
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 3002
+    targetPort: 3002
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+admin:
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 3003
+    targetPort: 3003
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+chat:
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 3004
+    targetPort: 3004
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+mongodb:
+  image:
+    repository: mongo
+    tag: "6"
+    pullPolicy: IfNotPresent
+
+  replicaCount: 1
+
+  service:
+    type: ClusterIP
+    port: 27017
+
+  database: streamingapp
+
+  storage:
+    size: 10Gi
+    storageClass: gp3
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+app:
+  jwtSecret: "StreamingAppKubernetesSecretChangeMe"
+
+  clientUrls: "http://localhost"
+
+  aws:
+    region: us-east-1
+    s3Bucket: ""
+
+  streamingPublicUrl: ""
+
+frontendConfig:
+  authApiUrl: "/api/auth"
+  streamingApiUrl: "/api/streaming"
+  streamingPublicUrl: ""
+  adminApiUrl: "/api/admin"
+  chatApiUrl: "/api/chat"
+  chatSocketUrl: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
