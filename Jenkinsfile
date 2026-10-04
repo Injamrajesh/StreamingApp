@@ -4,7 +4,6 @@ pipeline {
     environment {
         AWS_REGION = 'us-east-1'
         AWS_ACCOUNT_ID = '310297108115'
-        IMAGE_TAG = "${env.GIT_COMMIT}"
 
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
@@ -20,16 +19,25 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+
+                script {
+                    env.IMAGE_TAG = sh(
+                        script: 'git rev-parse --short=7 HEAD',
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Building commit: ${env.IMAGE_TAG}"
+                }
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                bat 'docker build -t streamingapp-frontend:%IMAGE_TAG% ./frontend'
-                bat 'docker build -t streamingapp-auth:%IMAGE_TAG% ./backend/authService'
-                bat 'docker build -t streamingapp-streaming:%IMAGE_TAG% -f ./backend/streamingService/Dockerfile ./backend'
-                bat 'docker build -t streamingapp-admin:%IMAGE_TAG% -f ./backend/adminService/Dockerfile ./backend'
-                bat 'docker build -t streamingapp-chat:%IMAGE_TAG% -f ./backend/chatService/Dockerfile ./backend'
+                sh 'docker build -t streamingapp-frontend:${IMAGE_TAG} ./frontend'
+                sh 'docker build -t streamingapp-auth:${IMAGE_TAG} ./backend/authService'
+                sh 'docker build -t streamingapp-streaming:${IMAGE_TAG} -f ./backend/streamingService/Dockerfile ./backend'
+                sh 'docker build -t streamingapp-admin:${IMAGE_TAG} -f ./backend/adminService/Dockerfile ./backend'
+                sh 'docker build -t streamingapp-chat:${IMAGE_TAG} -f ./backend/chatService/Dockerfile ./backend'
             }
         }
 
@@ -39,8 +47,9 @@ pipeline {
                     [$class: 'AmazonWebServicesCredentialsBinding',
                      credentialsId: 'aws-credentials-rajesh']
                 ]) {
-                    bat '''
-                    aws ecr get-login-password --region %AWS_REGION% | docker login --username AWS --password-stdin %ECR_REGISTRY%
+                    sh '''
+                        aws ecr get-login-password --region ${AWS_REGION} |
+                        docker login --username AWS --password-stdin ${ECR_REGISTRY}
                     '''
                 }
             }
@@ -48,21 +57,21 @@ pipeline {
 
         stage('Tag Docker Images') {
             steps {
-                bat 'docker tag streamingapp-frontend:%IMAGE_TAG% %FRONTEND_REPO%:%IMAGE_TAG%'
-                bat 'docker tag streamingapp-auth:%IMAGE_TAG% %AUTH_REPO%:%IMAGE_TAG%'
-                bat 'docker tag streamingapp-streaming:%IMAGE_TAG% %STREAMING_REPO%:%IMAGE_TAG%'
-                bat 'docker tag streamingapp-admin:%IMAGE_TAG% %ADMIN_REPO%:%IMAGE_TAG%'
-                bat 'docker tag streamingapp-chat:%IMAGE_TAG% %CHAT_REPO%:%IMAGE_TAG%'
+                sh 'docker tag streamingapp-frontend:${IMAGE_TAG} ${FRONTEND_REPO}:${IMAGE_TAG}'
+                sh 'docker tag streamingapp-auth:${IMAGE_TAG} ${AUTH_REPO}:${IMAGE_TAG}'
+                sh 'docker tag streamingapp-streaming:${IMAGE_TAG} ${STREAMING_REPO}:${IMAGE_TAG}'
+                sh 'docker tag streamingapp-admin:${IMAGE_TAG} ${ADMIN_REPO}:${IMAGE_TAG}'
+                sh 'docker tag streamingapp-chat:${IMAGE_TAG} ${CHAT_REPO}:${IMAGE_TAG}'
             }
         }
 
         stage('Push Images to ECR') {
             steps {
-                bat 'docker push %FRONTEND_REPO%:%IMAGE_TAG%'
-                bat 'docker push %AUTH_REPO%:%IMAGE_TAG%'
-                bat 'docker push %STREAMING_REPO%:%IMAGE_TAG%'
-                bat 'docker push %ADMIN_REPO%:%IMAGE_TAG%'
-                bat 'docker push %CHAT_REPO%:%IMAGE_TAG%'
+                sh 'docker push ${FRONTEND_REPO}:${IMAGE_TAG}'
+                sh 'docker push ${AUTH_REPO}:${IMAGE_TAG}'
+                sh 'docker push ${STREAMING_REPO}:${IMAGE_TAG}'
+                sh 'docker push ${ADMIN_REPO}:${IMAGE_TAG}'
+                sh 'docker push ${CHAT_REPO}:${IMAGE_TAG}'
             }
         }
     }
