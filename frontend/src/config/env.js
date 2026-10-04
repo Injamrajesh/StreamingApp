@@ -1,3 +1,4 @@
+// Kubernetes API routing is configured through Docker build arguments.
 const getEnv = (key, fallback) => {
   const value = process.env[key];
   return value === undefined || value === '' ? fallback : value;
